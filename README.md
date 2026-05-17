@@ -1,299 +1,322 @@
 <p align="center">
   <h1 align="center">Crypto</h1>
-  <p align="center">Un laboratoire de cryptographie de référence couvrant les chiffres classiques, les primitives asymétriques/symétriques, les fonctions de hachage, les signatures numériques et les applications de communication sécurisée — avec CLI et interface graphique de bureau.</p>
+  <p align="center">A reference cryptography laboratory covering classical ciphers, symmetric and asymmetric primitives, hash functions, digital signatures, and secure communication applications — with both a CLI and a PySide6 desktop GUI.</p>
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
   <img src="https://img.shields.io/badge/python-3.9+-3776AB.svg?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/tests-118%20passing-brightgreen.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/coverage-NIST%20%E2%9C%93%20RFC%20%E2%9C%93-success.svg" alt="Coverage">
-  <img src="https://img.shields.io/badge/algorithms-25+-orange.svg" alt="Algorithms">
+  <img src="https://img.shields.io/badge/tests-126-brightgreen.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/algorithms-22-orange.svg" alt="Algorithms">
+  <img src="https://img.shields.io/badge/coverage-NIST%20✓%20RFC%20✓-success.svg" alt="Coverage">
 </p>
 
 
 ## Installation
 
 ```sh
-# Cloner
+git clone <repo-url> crypto
 cd crypto
 
-# Virtualenv (recommandé)
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Dépendances
 pip install -r requirements.txt
+```
 
-# Lancer n'importe laquelle des trois interfaces
-python main.py        # Menu CLI
-python gui.py         # Interface graphique de bureau (Qt / PySide6)
+
+## Quick Start
+
+```sh
+python main.py           # interactive CLI menu
+python gui.py            # PySide6 desktop GUI
 ```
 
 
 ## Architecture
 
-Chaque algorithme cryptographique est exposé sous la forme d'un module Python pur avec une API publique
-(`chiffrer`, `dechiffrer`, `signer`, `verifier`, `chiffrer_bloc`, …) et une
-fonction non-interactive `demo()`. Trois interfaces indépendantes consomment ces
-modules sans dupliquer aucun code cryptographique.
+Each cryptographic algorithm lives in its own Python module with a public API
+(`chiffrer`, `dechiffrer`, `signer`, `verifier`, …) and a non-interactive
+`demo()` function. Two independent interfaces consume these modules without
+duplicating any cryptographic code.
 
 ```
-              ┌────────────────────────────────────────────┐
-              │        couche orientée utilisateur       │
-              │  ┌────────┐   ┌────────┐   ┌──────────┐   │
-              │  │  CLI   │   │   GUI    │   │
-              │  │main.py │   │ gui.py   │   │
-              │  └────┬───┘   └────┬───┘   └─────┬────┘   │
-              └───────┴────────────┴─────────────┴────────┘
-                        │ importlib + demo()
-              ┌─────────┴───────────────────────────────────┐
-              │         modules cryptographiques           │
-              │                                           │
-              │  classical/   symmetric/   asymmetric/    │
-              │  hashing/     signatures/  applications/  │
-              └─────────────┬───────────────────────────────┘
+             ┌────────────────────────────────────────────┐
+             │         user-facing layer                  │
+             │   ┌──────────┐         ┌──────────┐       │
+             │   │   CLI    │         │   GUI    │       │
+             │   │ main.py  │         │  gui.py  │       │
+             │   └────┬─────┘         └────┬─────┘       │
+             └────────┴────────────────────┴─────────────┘
+                       │  locker.catalog + importlib
+             ┌─────────┴─────────────────────────────────┐
+             │        cryptographic modules              │
+             │                                           │
+             │  classical/   symmetric/   asymmetric/    │
+             │  hashing/     signatures/  applications/  │
+             └─────────────┬─────────────────────────────┘
                            │
-              ┌─────────────┴───────────────────────────────┐
-              │  bibliotheques (primitives auditees)      │
-              │  pycryptodome · cryptography · hashlib    │
-              │  twofish · sympy · matplotlib             │
-              └─────────────────────────────────────────────┘
+             ┌─────────────┴─────────────────────────────┐
+             │  libraries (audited primitives)           │
+             │  pycryptodome · cryptography · hashlib    │
+             │  twofish · sympy · matplotlib             │
+             └───────────────────────────────────────────┘
 ```
 
-### Couches de validation
+The `locker/` package acts as the orchestration layer:
 
-| Couche | Mécanisme | Objectif |
-|--------|-----------|----------|
-| Correction de l'algorithme | Vecteurs officiels (NIST FIPS 180-4, 197, SP 800-38A, RFC 1321/4231/6229) | Les implémentations de zéro sont validées octet par octet |
-| Tests de propriétés | Aller-retour, avalanche, malleéabilité, non-déterminisme | Les comportements crypto attendus vérifiés |
-| Tests d'intégration | Serveur d'echo TCP/UDP, vote homomorphe de bout en bout | Composition complète des primitives |
-| Vérifications statiques | `pytest --strict-markers`, `py_compile` | Les erreurs de typage et les imports détectés à froid |
-
-### Primitives pédagogiques vs production
-
-| Module | Style | Notes |
-|--------|-------|-------|
-| AES, DES/3DES, RSA-OAEP, RSA-PSS, ECDSA, DSA, ECDH, MD5/SHA-256/SHA-512 (hashlib) | Basé sur bibliothèque | `pycryptodome` / `cryptography` / stdlib — niveau production |
-| Caesar, Vigenere, Hill, OTP | De zéro | Chiffres jouets, pédagogique |
-| RC4, RC6, Serpent | De zéro | Validés par rapport aux vecteurs publiés |
-| SHA-256, HMAC | De zéro | Validés par rapport à NIST FIPS 180-4 / RFC 4231 |
-| Diffie-Hellman, ElGamal (chiffre + signature), arithmétique ECC | De zéro | Python pur — **pas de temporisation constante**, pédagogique uniquement |
+| Component | Role |
+|-----------|------|
+| `locker.catalog` | Central registry of module paths, theme labels, and course aliases |
+| `locker.cli` | Renders the catalogue, resolves targets, and launches demos or custom-value forms |
+| `gui.py` | Imports the same catalogue so both interfaces stay in sync |
 
 
-## Exigences
+## Algorithms
 
-| Dépendance | Version |
-|-----------|---------|
-| Python | 3.9+ |
-| pycryptodome | 3.20+ |
-| cryptography | 42+ |
-| sympy | 1.12+ |
-| matplotlib | 3.8+ |
-| Pillow | 10+ |
-| twofish | 0.3+ |
-| pytest | 8+ |
-| textual (TUI) | 0.50+ |
-| PySide6 (GUI) | 6.5+ |
+### Classical Ciphers — `classical/`
 
+| Module | Description | Implementation |
+|--------|-------------|----------------|
+| `caesar` | Caesar cipher with brute-force and frequency analysis attacks | From scratch |
+| `vigenere` | Vigenère cipher with Kasiski/frequency cryptanalysis | From scratch |
+| `hill` | Hill cipher (matrix-based polygraphic) | From scratch |
+| `otp` | One-Time Pad | From scratch |
 
-## Fonctionnalités
+### Symmetric Cryptography — `symmetric/`
 
-### Terminées
+| Module | Description | Implementation |
+|--------|-------------|----------------|
+| `stream/rc4` | RC4 stream cipher | From scratch, validated against published vectors |
+| `block/des` | DES and Triple-DES (CBC mode) | Library (`pycryptodome`) |
+| `block/aes` | AES-128/192/256 in CBC and CTR modes, with PGM image encryption demo | Library (`pycryptodome`) |
+| `block/aes_finalists` | AES competition finalists: Serpent, Twofish, RC6 | From scratch (Serpent, RC6) + library (Twofish) |
+| `block/_serpent` | Serpent block cipher internals | From scratch |
 
+### Asymmetric Cryptography — `asymmetric/`
 
-## Cibles de construction
+| Module | Description | Implementation |
+|--------|-------------|----------------|
+| `diffie_hellman` | Diffie-Hellman key exchange | From scratch (pure Python) |
+| `rsa` | RSA-OAEP encryption/decryption | Library (`cryptography`) |
+| `elgamal` | ElGamal encryption | From scratch (pure Python) |
+| `ecc` | Elliptic curve arithmetic and ECDH key exchange | From scratch (pure Python) |
 
-| Module | Point d'entrée | Description |
-|--------|-------------|-------------|
-| `main` | `python main.py` | Menu CLI de marque — `Scénario` ou `Tester avec mes valeurs` interactif |
-| `gui` | `python gui.py` | Bureau PySide6 — barre d'outils de marque, panneaux par module personnalisés, workers threads |
-| `applications.tcp_secure` | `python -m applications.tcp_secure` | Serveur d'echo TCP sécurisé autonome |
-| `applications.udp_chat` | `python -m applications.udp_chat` | Chat UDP sécurisé autonome |
-| `applications.voting` | `python -m applications.voting` | Démonstration de vote homomorphe autonome |
+### Hash Functions — `hashing/`
 
+| Module | Description | Implementation |
+|--------|-------------|----------------|
+| `md5` | MD5 digest | Library (`hashlib`) |
+| `sha256` | SHA-256 — manual implementation validated against NIST FIPS 180-4 | From scratch |
+| `sha512` | SHA-512 with multi-algorithm comparison | Library (`hashlib`) |
+| `hmac` | HMAC — manual implementation validated against RFC 4231 | From scratch + stdlib comparison |
 
-## Utilisation
+### Digital Signatures — `signatures/`
 
-### CLI
+| Module | Description | Implementation |
+|--------|-------------|----------------|
+| `rsa_signature` | RSA PKCS#1 v1.5 and PSS signatures | Library (`cryptography`) |
+| `elgamal_sig` | ElGamal signature scheme | From scratch (pure Python) |
+| `dsa_ecdsa` | DSA and ECDSA (P-256, P-384, P-521) | Library (`cryptography`) |
 
-```sh
-python main.py                       # menu interactif (en-tête de marque, sections thématiques)
-python main.py classical.caesar      # une démonstration par nom (non-interactif)
-python main.py 2.3                   # par alias d'exercice de cours
-python main.py all                   # exécuter chaque démo séquentiellement
-python main.py --help                # aide
-python -m classical.caesar           # contourner entièrement le menu
-```
+### Secure Communication — `applications/`
 
-Le mode interactif affiche un en-tête de marque bleu français et répertorie chaque module par
-thème. Après en avoir choisi un, vous pouvez choisir :
+| Module | Description |
+|--------|-------------|
+| `secure_channel` | Core SecureChannel protocol: RSA-OAEP key exchange + AES-CTR + HMAC-SHA256 |
+| `tcp_secure` | TCP echo server with SecureChannel |
+| `udp_chat` | UDP secure chat |
+| `bluetooth_secure` | Bluetooth RFCOMM secure channel |
+| `ble_secure` | Bluetooth Low Energy (BLE) secure channel via GATT (bleak/bless) |
+| `voting` | Homomorphic e-voting demonstration (Paillier) |
 
-| Touche | Action |
-|--------|--------|
-| `s` | exécuter le `Scénario` précuit (sortie `demo()`) |
-| `i` | ouvrir le formulaire (`Tester avec mes valeurs`) — mêmes champs que GUI |
-| `q` | retour au menu |
+### Utilities — `common/`
 
-Les couleurs ANSI se désactivent automatiquement quand stdout n'est pas un TTY, donc les redirections/canalisations restent propres.
+| Module | Description |
+|--------|-------------|
+| `pgm` | PGM (P5 grayscale) image reader/writer for block cipher visual demos |
 
-### TUI
-
-```sh
-python tui.py
-```
-
-Le disposition reflète l'interface graphique : barre supérieure de marque, arborescence latérale des modules, deux
-onglets côté droit (`Tester avec mes valeurs` par défaut + `Scénario`), barre d'état en bas.
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+R` | Lancer scenario |
-| `Ctrl+L` | Effacer la sortie |
-| `i` / `s` | switch to `Mes valeurs` / `Scenario` tab |
-| `q` | Quitter |
-| `Enter` on a tree node | run that module |
-
-### GUI
-
-```sh
-python gui.py
-```
-
-Branded toolbar in French Blue with `Lancer scenario` (Ctrl+R) and `Effacer`
-(Ctrl+L). Default tab is `Tester avec mes valeurs` (interactive form or custom
-panel — symmetric/asymmetric encrypt-decrypt, hash, signatures, network chats,
-<p align="center">
-  <h1 align="center">Locker</h1>
-  <p align="center">A standalone cryptography laboratory for classical ciphers, symmetric and asymmetric primitives, hashing, signatures, and secure communication demos.</p>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.9+-3776AB.svg?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/tests-pytest-green.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/ui-CLI%20%7C%20GUI-green.svg" alt="Interfaces">
-</p>
-
-Locker sépare la couche lanceur des moteurs cryptographiques. Les algorithmes vivent toujours dans les packages de domaine, tandis que le nouveau package `locker/` possède le catalogue, le routage et les points d'entrée orientés utilisateur.
-
-## Installation
-
-```sh
-cd cryptography
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-If you prefer a different interpreter, use the matching `python3.x` binary for the virtual environment creation step.
-
-## Run
-
-```sh
-python main.py --list
-python main.py --theme symmetric
-python main.py 2.3
-python main.py --all
-python tui.py
-python gui.py
-```
-
-Le lanceur accepte également les noms de modules points tels que `classical.caesar` ou `applications.voting`. En mode interactif, chaque module peut être ouvert de deux façons :
-
-1. `Scénario` exécute la sortie de démonstration cuite.
-2. `Test with my values` opens the form-driven execution path.
-
-Useful CLI options:
-
-1. `--list` imprime le catalogue complet groupé par thème.
-2. `--theme <name>` prints a single theme section.
-3. `--all` runs every demo sequentially.
-4. `--no-color` disables ANSI styling for redirected output.
-
-## Architecture
-
-Locker uses a thin orchestration layer above the crypto packages.
-
-```text
-user
-  -> main.py / gui.py
-  -> locker.cli / locker.catalog
-  -> classical / symmetric / asymmetric / hashing / signatures / applications
-```
-
-The important separation is:
-
-1. `locker.catalog` stores the registry of module paths, theme labels, and course aliases.
-2. `locker.cli` rend le catalogue, résout les cibles et lance des démonstrations ou des exécutions de valeurs personnalisées.
-3. `gui.py` importe le même catalogue pour que les deux interfaces restent alignées.
-4. Les packages cryptographiques restent indépendants et peuvent toujours être importés directement pour les tests ou la réutilisation.
-
-## Folder Structure
-
-```text
-cryptography/
-  locker/
-    __init__.py
-    catalog.py
-    cli.py
-  classical/
-  symmetric/
-  asymmetric/
-  hashing/
-  signatures/
-  applications/
-  common/
-  gui.py
-  tui.py
-  main.py
-  tests/
-```
 
 ## Interfaces
 
-### CLI
+### CLI — `python main.py`
 
-`python main.py` ouvre le lanceur interactif. `python main.py 2.3` exécute la démonstration AES directement, et `python main.py --list` imprime le catalogue.
+```sh
+python main.py                       # interactive menu
+python main.py classical.caesar      # run a single demo by name
+python main.py 2.3                   # by course alias
+python main.py --all                 # run every demo sequentially
+python main.py --list                # print the full catalogue
+python main.py --theme symmetric     # print a single theme section
+python main.py --no-color            # disable ANSI colours
+```
 
-### TUI
+In interactive mode, selecting a module opens a prompt:
 
-`python tui.py` démarre l'interface Textual avec le catalogue partagé, une arborescence de modules, un formulaire de valeurs personnalisées et une vue de scénario.
+| Key | Action |
+|-----|--------|
+| `s` | Run the pre-built `Scénario` (`demo()` output) |
+| `i` | Open the `Tester avec mes valeurs` form (same fields as the GUI) |
+| `q` | Return to menu |
 
-### GUI
+ANSI colours are disabled automatically when stdout is not a TTY.
 
-`python gui.py` ouvre l'application de bureau PySide6 avec le même modèle de sélection de module et la même division scénario/personnalisée.
+### GUI — `python gui.py`
 
-## Algorithm Packages
+PySide6 desktop application with:
 
-Les moteurs cryptographiques restent séparés par domaine :
+- **Algorithm browser** sidebar with search/filter.
+- **Two tabs per module**: `Tester avec mes valeurs` (interactive form or custom panel) and `Scénario` (pre-built demo output).
+- Toolbar with `Lancer scénario` (`Ctrl+R`) and `Effacer` (`Ctrl+L`).
+- Dedicated panels for symmetric/asymmetric encrypt–decrypt, hashing, signatures, TCP/UDP/Bluetooth chat, and voting.
+- Worker threads for non-blocking demo execution.
 
-| Paquet | Contenu |
-|--------|----------|
-| `classical` | Caesar, Vigenere, Hill, OTP |
-| `symmetric` | RC4, DES, AES, finalists |
-| `asymmetric` | Diffie-Hellman, RSA, ElGamal, ECC |
-| `hashing` | MD5, SHA-256, SHA-512, HMAC |
-| `signatures` | Signatures RSA, signature ElGamal, DSA/ECDSA |
-| `applications` | Démos de canal sécurisé, chat, vote, Bluetooth |
+### BLE Demo Scripts
+
+```sh
+python ble_serveur.py    # Linux peripheral (bless)
+python ble_client.py     # macOS/Linux central (bleak)
+```
+
+
+## Project Structure
+
+```
+crypto/
+├── main.py                          # CLI entry point (delegates to locker.cli)
+├── gui.py                           # PySide6 desktop GUI
+├── gui_panels.py                    # Custom GUI panels (symmetric, asymmetric, hash, etc.)
+├── gui_apps.py                      # Application-specific panels (TCP, UDP, BLE, voting)
+├── gui_specs.py                     # Form field descriptors and runners
+├── gui_widgets.py                   # Shared GUI widget helpers
+├── ble_client.py                    # BLE central demo script
+├── ble_serveur.py                   # BLE peripheral demo script
+├── locker/
+│   ├── __init__.py                  # Package exports
+│   ├── catalog.py                   # Module registry, themes, course aliases
+│   └── cli.py                       # Independent CLI launcher
+├── classical/
+│   ├── caesar.py
+│   ├── vigenere.py
+│   ├── hill.py
+│   └── otp.py
+├── symmetric/
+│   ├── stream/
+│   │   └── rc4.py
+│   └── block/
+│       ├── aes.py
+│       ├── aes_finalists.py         # Serpent, Twofish, RC6
+│       ├── des.py
+│       └── _serpent.py
+├── asymmetric/
+│   ├── diffie_hellman.py
+│   ├── rsa.py
+│   ├── elgamal.py
+│   └── ecc.py
+├── hashing/
+│   ├── md5.py
+│   ├── sha256.py
+│   ├── sha512.py
+│   └── hmac.py
+├── signatures/
+│   ├── rsa_signature.py
+│   ├── elgamal_sig.py
+│   └── dsa_ecdsa.py
+├── applications/
+│   ├── secure_channel.py
+│   ├── tcp_secure.py
+│   ├── udp_chat.py
+│   ├── bluetooth_secure.py
+│   ├── ble_secure.py
+│   └── voting.py
+├── common/
+│   └── pgm.py                      # PGM image reader/writer
+├── assets/                          # PGM sample images for block cipher demos
+├── tests/
+│   ├── test_classical.py
+│   ├── test_symmetric.py
+│   ├── test_asymmetric.py
+│   ├── test_hashing.py
+│   ├── test_signatures.py
+│   ├── test_applications.py
+│   ├── test_bluetooth_wrapper.py
+│   ├── test_bluetooth_loopback.py
+│   └── test_ble_wrapper.py
+├── requirements.txt
+├── pyproject.toml
+└── .gitignore
+```
+
+
+## Testing
+
+```sh
+pytest                   # run the full suite (126 tests)
+pytest tests/ -v         # verbose output
+pytest -k "hashing"      # filter by keyword
+```
+
+Tests cover:
+
+| Layer | Mechanism |
+|-------|-----------|
+| Algorithm correctness | Official vectors (NIST FIPS 180-4, FIPS 197, SP 800-38A, RFC 1321/4231/6229) |
+| Property tests | Round-trip, avalanche, malleability, non-determinism |
+| Integration tests | TCP/UDP echo server, end-to-end homomorphic voting |
+| Static checks | `pytest --strict-markers`, `py_compile` |
+
 
 ## Dependencies
 
-| Dépendance | Objectif |
-|-----------|----------|
-| `pycryptodome` | Aide au chiffre de bloc et asymétrique |
-| `cryptography` | RSA, ECDH, signatures, primitives de canal authentifié |
-| `sympy` | Théorie des nombres et helpers d'algèbre |
-| `matplotlib` | Graphiques de benchmark et de comparaison |
-| `numpy` | Support numérique |
-| `twofish` | Implémentation de référence Twofish |
-| `Pillow` | Traitement d'images |
-| `pytest` | Suite de tests |
-| `textual` | Interface utilisateur terminal |
-| `PySide6` | Interface graphique de bureau |
+| Dependency | Version | Purpose |
+|------------|---------|---------|
+| Python | 3.9+ | Runtime |
+| `pycryptodome` | ≥ 3.20 | Block cipher and asymmetric helpers |
+| `cryptography` | ≥ 42 | RSA, ECDH, signatures, authenticated channel primitives |
+| `sympy` | ≥ 1.12 | Number theory and algebra helpers |
+| `matplotlib` | ≥ 3.8 | Benchmark and comparison charts |
+| `numpy` | ≥ 1.26 | Numeric support |
+| `twofish` | ≥ 0.3 | Twofish reference implementation |
+| `Pillow` | ≥ 10 | Image processing |
+| `pytest` | ≥ 8 | Test suite |
+| `textual` | ≥ 0.50 | Terminal UI (reserved) |
+| `PySide6` | ≥ 6.5 | Desktop GUI |
+| `bleak` | ≥ 0.21 | BLE central role (scanner/client) |
+| `bless` | ≥ 0.2.6 | BLE peripheral role (GATT server) |
+
+
+## Course Aliases
+
+Modules are mapped to numbered course aliases for quick access:
+
+| Alias | Module |
+|-------|--------|
+| 1.1 | `classical.caesar` |
+| 1.2 | `classical.vigenere` |
+| 1.3 | `classical.hill` |
+| 1.4 | `classical.otp` |
+| 2.1 | `symmetric.rc4` |
+| 2.2 | `symmetric.des` |
+| 2.3 | `symmetric.aes` |
+| 2.4 | `symmetric.finalists` |
+| 3.1 | `asymmetric.dh` |
+| 3.2 | `asymmetric.rsa` |
+| 3.3 | `asymmetric.elgamal` |
+| 3.4 | `asymmetric.ecc` |
+| 4.1 | `hashing.md5` |
+| 4.2 | `hashing.sha256` |
+| 4.3 | `hashing.sha512` |
+| 4.4 | `hashing.hmac` |
+| 5.1 | `signatures.rsa` |
+| 5.2 | `signatures.elgamal` |
+| 5.3 | `signatures.dsa_ecdsa` |
+| 6.1 | `applications.tcp` |
+| 6.2 | `applications.bluetooth` |
+| 6.3 | `applications.udp` |
+| 6.4 | `applications.voting` |
+
 
 ## Notes
 
-`main.py` est maintenant un point d'entrée de compatibilité qui délègue à `locker.cli`. L'interface graphique utilise le même catalogue, de sorte que les étiquettes de navigation, les alias et l'ordre des modules restent cohérents.
-│   └── pgm.py                    # PGM image reader/writer
+- **Educational vs production**: From-scratch implementations (Diffie-Hellman, ElGamal, ECC, RC4, RC6, Serpent, SHA-256, HMAC) are pure Python with no constant-time guarantees — they are intended for learning, not production use.
+- `main.py` delegates to `locker.cli` at runtime. The `locker/` package centralises the module registry so both CLI and GUI stay in sync.
+- PGM sample images in `assets/` are used by the AES/DES block cipher demos to visualise ECB vs CBC vs CTR mode differences.
