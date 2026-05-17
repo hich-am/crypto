@@ -31,9 +31,6 @@ def loop_thread():
 
 
 def test_disponible_reflete_imports(monkeypatch):
-    # Sans aucune dependance BLE installee, disponible() peut retourner True
-    # (si bleak ou bless est installe). On verifie au moins que les helpers
-    # retournent un booleen.
     assert isinstance(ble_secure.disponible_central(), bool)
     assert isinstance(ble_secure.disponible_peripheral(), bool)
     assert isinstance(ble_secure.disponible(), bool)
@@ -55,7 +52,6 @@ def test_recv_bloque_jusqu_a_feed(loop_thread):
 
     t = threading.Thread(target=lecteur)
     t.start()
-    # Le thread doit etre en attente (pas encore de donnees)
     t.join(timeout=0.2)
     assert t.is_alive()
     transport.feed(b"abcd")

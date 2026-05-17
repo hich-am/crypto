@@ -71,8 +71,6 @@ class TestRSAPSS:
 class TestElGamalSignature:
     @pytest.fixture(scope="class")
     def cles(self):
-        # Mersenne 2^31-1 + generateur 7. Pas de securite mais arithmetique
-        # exacte ; evite primitive_root sur 512+ bits (lent en sympy).
         import secrets
         p, g = 2147483647, 7
         x = secrets.randbelow(p - 3) + 2

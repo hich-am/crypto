@@ -43,7 +43,6 @@ def verifier(cle: bytes, message: bytes, tag: bytes, algo: str = "sha256") -> bo
     return comparer_constant_time(hmac_manuel(cle, message, algo), tag)
 
 
-# Vecteurs RFC 4231.
 RFC4231 = [
     (
         b"\x0b" * 20,

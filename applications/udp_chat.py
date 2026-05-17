@@ -90,7 +90,7 @@ def demo():
 
         print("\n  Test tampering :")
         paquet = bytearray(chiffrer_paquet(b"piege", cle_aes, cle_hmac))
-        paquet[20] ^= 0xFF  # corrompt le ciphertext
+        paquet[20] ^= 0xFF
         try:
             dechiffrer_paquet(bytes(paquet), cle_aes, cle_hmac)
             print("    NON DETECTE")

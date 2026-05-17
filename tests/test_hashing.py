@@ -7,7 +7,6 @@ from hashing.md5 import md5
 from hashing.sha256 import sha256_manuel
 
 
-# RFC 1321 - MD5 Test Suite (Section A.5)
 MD5_VECTEURS = [
     (b"", "d41d8cd98f00b204e9800998ecf8427e"),
     (b"a", "0cc175b9c0f1b6a831c399e269772661"),
@@ -20,7 +19,6 @@ MD5_VECTEURS = [
     ),
 ]
 
-# NIST FIPS 180-4 - SHA-256 Short Messages
 SHA256_VECTEURS = [
     (b"", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
     (b"a", "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"),
@@ -68,7 +66,7 @@ class TestSHA256:
         h1 = sha256_manuel(msg)
         h2 = sha256_manuel(bytes(modifie))
         diff = sum(bin(int(a, 16) ^ int(b, 16)).count("1") for a, b in zip(h1, h2))
-        assert diff > 100  # ~128 bits attendus
+        assert diff > 100
 
     def test_message_long_aligne(self):
         msg = b"A" * 5000
@@ -111,7 +109,7 @@ class TestHMAC:
 
     def test_rfc4231_vector6_long_key(self):
         hmac_manuel, _, _, _ = self._import()
-        cle = b"\xaa" * 131  # > block_size de SHA-256 (64), donc cle hashee
+        cle = b"\xaa" * 131
         msg = b"Test Using Larger Than Block-Size Key - Hash Key First"
         attendu = bytes.fromhex(
             "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"

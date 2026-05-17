@@ -26,9 +26,6 @@ from PySide6.QtWidgets import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Reusable chat column (header + bubble area + input row)
-# ---------------------------------------------------------------------------
 
 class _ChatColonne(QWidget):
     """One side of a chat: header, scrollable bubble area, input row."""
@@ -44,7 +41,6 @@ class _ChatColonne(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(8)
 
-        # Header bar with colored dot + title
         header = QWidget()
         header.setObjectName("chatHeader")
         header.setStyleSheet(
@@ -72,7 +68,6 @@ class _ChatColonne(QWidget):
         h.addWidget(self._lbl_meta)
         outer.addWidget(header)
 
-        # Scrollable bubble area
         self._bubbles = QWidget()
         self._bubbles.setObjectName("chatBubbles")
         self._bubbles.setStyleSheet("#chatBubbles { background-color: #ffffff; }")
@@ -95,7 +90,6 @@ class _ChatColonne(QWidget):
         )
         outer.addWidget(self._scroll, 1)
 
-        # Input row
         input_row = QHBoxLayout()
         input_row.setSpacing(6)
         self._input = QLineEdit()
@@ -105,8 +99,6 @@ class _ChatColonne(QWidget):
         self._send = QPushButton("Envoyer")
         self._send.setProperty("primary", True)
         self._send.setMinimumWidth(96)
-        # Force the primary style explicitly so it stays visible regardless of
-        # how the global QPushButton cascade evolves.
         self._send.setStyleSheet(
             "QPushButton {"
             "  background-color: #22c55e; color: #ffffff;"
@@ -122,7 +114,6 @@ class _ChatColonne(QWidget):
         input_row.addWidget(self._send)
         outer.addLayout(input_row)
 
-    # -- Public API --------------------------------------------------------
 
     def connecter_envoi(self, callback):
         self._input.returnPressed.connect(callback)
@@ -144,7 +135,6 @@ class _ChatColonne(QWidget):
         self._lbl_meta.setText(texte)
 
     def vider(self):
-        # Remove all bubbles, keep trailing stretch.
         while self._bubbles_layout.count() > 1:
             item = self._bubbles_layout.takeAt(0)
             self._supprimer_item(item)
@@ -188,7 +178,6 @@ class _ChatColonne(QWidget):
         self._bubbles_layout.insertWidget(self._bubbles_layout.count() - 1, bulle)
         self._defiler()
 
-    # -- Internal ----------------------------------------------------------
 
     def _defiler(self):
         QTimer.singleShot(
@@ -211,9 +200,6 @@ class _ChatColonne(QWidget):
                 self._supprimer_item(layout.takeAt(0))
 
 
-# ---------------------------------------------------------------------------
-# TCP chat: full SecureChannel handshake on a local loopback session
-# ---------------------------------------------------------------------------
 
 class TcpChatPanel(QWidget):
     """Local TCP secure session with both endpoints visible side by side."""
@@ -250,7 +236,6 @@ class TcpChatPanel(QWidget):
         info.setWordWrap(True)
         layout.addWidget(info)
 
-        # Control bar
         ctl = QHBoxLayout()
         ctl.setSpacing(8)
         self._b_start = QPushButton("Demarrer la session")
@@ -268,7 +253,6 @@ class TcpChatPanel(QWidget):
         ctl.addWidget(self._lbl_etat)
         layout.addLayout(ctl)
 
-        # Two-column chat
         cols = QHBoxLayout()
         cols.setSpacing(14)
         self._col_client = _ChatColonne("Client", accent="#22c55e")
@@ -279,7 +263,6 @@ class TcpChatPanel(QWidget):
         cols.addWidget(self._col_serveur, 1)
         layout.addLayout(cols, 1)
 
-        # Wire signals
         self.sig_recu_client.connect(
             lambda t: self._col_client.ajouter_message(t, sortant=False)
         )
@@ -291,7 +274,6 @@ class TcpChatPanel(QWidget):
         self.sig_arrete.connect(self._sur_arrete)
         self.sig_journal.connect(self._sur_journal)
 
-    # -- Lifecycle ---------------------------------------------------------
 
     def _demarrer(self):
         self._stop = threading.Event()
@@ -421,7 +403,6 @@ class TcpChatPanel(QWidget):
         self._port = None
         self.sig_arrete.emit()
 
-    # -- UI thread reactions ----------------------------------------------
 
     def _sur_pret(self):
         self._col_client.activer(True)
@@ -441,13 +422,6 @@ class TcpChatPanel(QWidget):
         self._col_serveur.ajouter_systeme(msg)
 
 
-# ---------------------------------------------------------------------------
-# Bluetooth secure chat: same SecureChannel protocol as TCP, but transported
-# over BLE GATT (bleak central + bless peripheral). The Serveur column runs
-# the peripheral role (advertises the service) ; the Client column runs the
-# central role (scans and connects by advertised name). Cross-platform :
-# Linux <-> macOS works because BLE is supported natively on both.
-# ---------------------------------------------------------------------------
 
 class BluetoothChatPanel(QWidget):
     """Bluetooth secure chat with Serveur and Client columns side-by-side.
@@ -513,7 +487,6 @@ class BluetoothChatPanel(QWidget):
             )
             layout.addWidget(warning)
 
-        # Shared service name (used both as advertise name + scan filter)
         params = QHBoxLayout()
         params.setSpacing(8)
         params.addWidget(QLabel("Nom du service :"))
@@ -526,7 +499,6 @@ class BluetoothChatPanel(QWidget):
         cols = QHBoxLayout()
         cols.setSpacing(14)
 
-        # ----- Serveur (peripheral) -----
         serveur_box = QVBoxLayout()
         serveur_ctl = QHBoxLayout()
         self._b_start_s = QPushButton("Demarrer le serveur")
@@ -551,7 +523,6 @@ class BluetoothChatPanel(QWidget):
         serveur_widget.setLayout(serveur_box)
         cols.addWidget(serveur_widget, 1)
 
-        # ----- Client (central) -----
         client_box = QVBoxLayout()
         client_ctl = QHBoxLayout()
         self._b_start_c = QPushButton("Connecter le client")
@@ -583,7 +554,6 @@ class BluetoothChatPanel(QWidget):
         if not self._central_ok:
             self._b_start_c.setEnabled(False)
 
-        # Wire signals to UI thread
         self.sig_recu_serveur.connect(
             lambda t: self._col_serveur.ajouter_message(t, sortant=False)
         )
@@ -599,7 +569,6 @@ class BluetoothChatPanel(QWidget):
         self.sig_arrete_serveur.connect(self._sur_arrete_serveur)
         self.sig_arrete_client.connect(self._sur_arrete_client)
 
-    # -- Serveur (peripheral) -------------------------------------------------
 
     def _demarrer_serveur(self):
         if not self._peripheral_ok:
@@ -672,7 +641,6 @@ class BluetoothChatPanel(QWidget):
         self._b_stop_s.setEnabled(False)
         self._lbl_etat_s.setText("Inactif")
 
-    # -- Client (central) -----------------------------------------------------
 
     def _demarrer_client(self):
         if not self._central_ok:
@@ -741,9 +709,6 @@ class BluetoothChatPanel(QWidget):
         self._lbl_etat_c.setText("Inactif")
 
 
-# ---------------------------------------------------------------------------
-# UDP chat: stateless AES-CTR + HMAC-SHA256 packets, two endpoints in-process
-# ---------------------------------------------------------------------------
 
 class UdpChatPanel(QWidget):
     """Local UDP secure session with both endpoints visible side by side."""
@@ -952,9 +917,6 @@ class UdpChatPanel(QWidget):
         self._col_serveur.ajouter_systeme(msg)
 
 
-# ---------------------------------------------------------------------------
-# Voting panel (unchanged structure, kept for completeness)
-# ---------------------------------------------------------------------------
 
 def _mono(w):
     w.setFont(QFont("Menlo", 11))

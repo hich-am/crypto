@@ -36,7 +36,7 @@ def _nouveau_socket_rfcomm():
     return socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 
 
-def serveur_rfcomm(uuid: str, port: int = 1):  # noqa: ARG001 - uuid conserve pour compat API
+def serveur_rfcomm(uuid: str, port: int = 1):
     sock = _nouveau_socket_rfcomm()
     sock.bind(("", port))
     sock.listen(1)

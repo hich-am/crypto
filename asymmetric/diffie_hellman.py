@@ -77,8 +77,6 @@ def demo():
     print("\n" + "=" * 50)
     print("  Diffie-Hellman")
     print("=" * 50)
-    # On utilise le premier de Mersenne 2^31-1 pour la demo (rapidite).
-    # En production : generer_p_g(MIN_BITS) avec MIN_BITS = 512 ou plus.
     p, g = 2147483647, 7
     print(f"\n  Parametres demo : p = {p} ({p.bit_length()} bits), g = {g}")
     _, _, _, _, Ka, Kb = echange(p, g)

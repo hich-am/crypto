@@ -79,7 +79,6 @@ def analyse_frequences(cryptogramme: str) -> int:
     return meilleure_cle
 
 
-# Aliases pour compatibilite avec les anciens noms.
 chiffrer_cesar = chiffrer
 dechiffrer_cesar = dechiffrer
 

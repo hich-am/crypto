@@ -35,16 +35,12 @@ RX_CHAR_UUID = "00112233-4455-6677-8899-aabbccddee01"
 TX_CHAR_UUID = "00112233-4455-6677-8899-aabbccddee02"
 
 DEFAULT_CHUNK_SIZE = 180
-# Multi-byte marker so it cannot be confused with real protocol bytes
-# (SecureChannel framing starts with a 4-byte length prefix whose first
-# bytes are often 0x00 for typical sizes). The central sends this with
-# ack-required so it is strictly ordered before any handshake data.
 _HELLO_MARKER = b"BLEHELLO_v1\x00"
 
 
 def disponible_central() -> bool:
     try:
-        import bleak  # noqa: F401
+        import bleak
         return True
     except ImportError:
         return False
@@ -52,7 +48,7 @@ def disponible_central() -> bool:
 
 def disponible_peripheral() -> bool:
     try:
-        import bless  # noqa: F401
+        import bless
         return True
     except ImportError:
         return False
@@ -123,9 +119,6 @@ class _BleTransport:
             self._rx_event.set()
 
 
-# ---------------------------------------------------------------------------
-# Peripheral side (Linux, bless)
-# ---------------------------------------------------------------------------
 
 
 class _PeripheralController:
@@ -192,10 +185,6 @@ class _PeripheralController:
         def write_cb(characteristic, value, **kwargs):
             data = bytes(value)
             if not self._hello_received.is_set():
-                # First write from central MUST be the hello marker. Anything
-                # else is discarded (stale write from a previous session) until
-                # we see the marker. The marker itself is never fed to the
-                # transport; only data after it counts as protocol bytes.
                 idx = data.find(_HELLO_MARKER)
                 if idx < 0:
                     return
@@ -229,15 +218,11 @@ class _PeripheralController:
             tx_char = srv.get_characteristic(TX_CHAR_UUID)
             tx_char.value = bytearray(chunk)
             srv.update_value(SERVICE_UUID, TX_CHAR_UUID)
-            # Yield to BlueZ so the notification ATT PDU is actually flushed
-            # before the next chunk overwrites tx_char.value. Without this,
-            # rapid successive notifications can coalesce and drop frames.
             await asyncio.sleep(0.02)
 
         self._transport = _BleTransport(self._loop, notify)
         self._ready.set()
 
-        # Keep the loop alive; bless server runs in background tasks.
         while not self._transport._closed:
             await asyncio.sleep(0.5)
         await srv.stop()
@@ -255,9 +240,6 @@ def accepter(transport: _BleTransport):
     return serveur_handshake(transport), transport
 
 
-# ---------------------------------------------------------------------------
-# Central side (macOS, bleak)
-# ---------------------------------------------------------------------------
 
 
 class _CentralController:
@@ -317,8 +299,6 @@ class _CentralController:
         await client.connect()
         self._client = client
 
-        # Resolve characteristic objects to disambiguate any duplicate UUIDs
-        # (BlueZ peripheral leaks may register the same service twice).
         services = client.services
         target_service = None
         for svc in services:
@@ -343,10 +323,6 @@ class _CentralController:
             )
 
         async def write_chunk(chunk: bytes) -> None:
-            # response=True: each chunk is ack'd by the peripheral before the
-            # next is sent. Guarantees in-order delivery and no drops, which
-            # is critical because SecureChannel frames are length-prefixed
-            # and any reordering corrupts the framing.
             await client.write_gatt_char(rx_char, chunk, response=True)
 
         transport = _BleTransport(self._loop, write_chunk)
@@ -355,8 +331,6 @@ class _CentralController:
             transport.feed(bytes(data))
 
         await client.start_notify(tx_char, notify_cb)
-        # Send hello marker (with response, for strict ordering before any
-        # subsequent chunked handshake writes that use write-without-response).
         await client.write_gatt_char(rx_char, _HELLO_MARKER, response=True)
 
         self._transport = transport
@@ -378,9 +352,6 @@ def client_ble(nom: str = "SecureChannelBLE", timeout_scan: float = 30.0):
     return client_handshake(transport), transport
 
 
-# ---------------------------------------------------------------------------
-# Demo / CLI
-# ---------------------------------------------------------------------------
 
 
 def demo():

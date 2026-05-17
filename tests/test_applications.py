@@ -189,8 +189,8 @@ class TestVoting:
         e1 = chiffrer_vote(p, g, y, 0)
         e2 = chiffrer_vote(p, g, y, 0)
         e3 = chiffrer_vote(p, g, y, 1)
-        assert e1 != e2  # deux E(0) sont differents
-        assert e1 != e3  # E(0) != E(1)
+        assert e1 != e2
+        assert e1 != e3
 
     def test_total_borne_depasse_rejete(self, election):
         p, g, y, x = election

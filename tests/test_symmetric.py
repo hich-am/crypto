@@ -17,11 +17,9 @@ from symmetric.stream.rc4 import ksa, prga, rc4
 
 class TestRC4:
     def test_vecteur_wikipedia_wiki_pedia(self):
-        # RC4("Wiki", "pedia") = 1021BF0420
         assert rc4(b"Wiki", b"pedia").hex() == "1021bf0420"
 
     def test_vecteur_wikipedia_secret_attack(self):
-        # RC4("Secret", "Attack at dawn")
         attendu = "45a01f645fc35b383552544b9bf5"
         assert rc4(b"Secret", b"Attack at dawn").hex() == attendu
 
@@ -82,7 +80,6 @@ class TestAES:
         assert dechiffrer_cbc(chiffrer_cbc(msg, cle, iv), cle, iv) == msg
 
     def test_aes_128_ecb_vecteur_nist(self):
-        # NIST FIPS 197 Annexe C.1 - AES-128 known answer
         from Crypto.Cipher import AES
         cle = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
         clair = bytes.fromhex("00112233445566778899aabbccddeeff")
@@ -90,7 +87,6 @@ class TestAES:
         assert AES.new(cle, AES.MODE_ECB).encrypt(clair) == attendu
 
     def test_aes_128_cbc_vecteur_nist(self):
-        # NIST SP 800-38A F.2.1
         from Crypto.Cipher import AES
         cle = bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c")
         iv = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
@@ -117,7 +113,7 @@ class TestAES:
         c1 = AES.new(cle, AES.MODE_CBC, iv=iv1).encrypt(msg)
         c2 = AES.new(cle, AES.MODE_CBC, iv=iv2).encrypt(msg)
         diff = sum(bin(a ^ b).count("1") for a, b in zip(c1[:16], c2[:16]))
-        assert diff > 40  # ~64 bits changes en moyenne
+        assert diff > 40
 
 
 class TestRC6:

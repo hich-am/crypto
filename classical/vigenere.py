@@ -109,7 +109,6 @@ def retrouver_cle(cryptogramme: str, longueur: int) -> str:
     return "".join(cle)
 
 
-# Compat anciens noms.
 chiffrer_vigenere = chiffrer
 dechiffrer_vigenere = dechiffrer
 test_kasiski = kasiski

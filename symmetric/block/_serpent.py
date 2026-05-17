@@ -5,7 +5,7 @@ sont appliquees colonne par colonne via le tableau de lookup ; cette
 approche privilegie la lisibilite et la verifiabilite (les constantes
 sont visibles) au detriment de la performance.
 
-Validation : vecteurs officiels NESSIE Set 1 vector #0 pour Serpent-128
+Validation : vecteurs officiels NESSIE Set 1 vector
 et Serpent-256.
 
 Reference :

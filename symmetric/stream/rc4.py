@@ -30,7 +30,6 @@ def chiffrer(cle: bytes, donnees: bytes) -> bytes:
     return bytes(d ^ k for d, k in zip(donnees, prga(ksa(cle), len(donnees))))
 
 
-# Compat ancien nom.
 rc4 = chiffrer
 
 

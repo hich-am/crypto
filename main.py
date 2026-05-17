@@ -49,7 +49,6 @@ THEMES = {
 THEME_ORDER = ["classical", "symmetric", "asymmetric", "hashing", "signatures", "applications"]
 
 
-# Aliases pour utilisateurs venant des fiches du cours.
 ALIASES = {
     "1.1": ("classical", "caesar"),
     "1.2": ("classical", "vigenere"),
@@ -77,12 +76,6 @@ ALIASES = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Palette (approximated for the 256-color terminal palette).
-#   French Blue #003f91 -> 25 (deep blue), used for brand / titles / actions
-#   Cool Sky    #5da9e9 -> 75 (light blue), used for hints / focus
-#   Honeydew    #e5f4e3 -> 194 (very light green), used for success surfaces
-# ---------------------------------------------------------------------------
 _USE_COLOR = sys.stdout.isatty()
 
 
@@ -274,7 +267,6 @@ def lancer(token):
         print(_err(f"  Inconnu : {token}"))
         return
     chemin, label = cle
-    # In non-interactive mode (CLI argument) keep scenario behaviour for back-compat.
     if not sys.stdin.isatty():
         _executer_scenario(chemin)
         return

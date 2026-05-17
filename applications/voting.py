@@ -70,25 +70,21 @@ def demo():
     print("  Homomorphic e-voting (ElGamal)")
     print("=" * 50)
 
-    p, g, y, x = generer_election(64)  # bits reduits pour la demo
+    p, g, y, x = generer_election(64)
     print(f"\n  Parametres : p ({p.bit_length()} bits), g, (y publique, x privee)")
 
-    # Tirage des bulletins.
     n = 50
     votes = [secrets.randbelow(2) for _ in range(n)]
     chiffres = [chiffrer_vote(p, g, y, v) for v in votes]
     print(f"  Bulletins  : {n} votants ; {sum(votes)} OUI attendus")
 
-    # Verification : individual ballots are not the same plaintext when v=1.
     nb_unique = len({c for c in chiffres if c[0] != 1})
     print(f"  Bulletins distincts : {nb_unique}/{n} (non-determinisme ElGamal)")
 
-    # Decompte par l'autorite.
     total_decompte = decompter(p, g, x, chiffres, max_votants=n)
     print(f"  Total decompte : {total_decompte} OUI / {n} bulletins")
     print(f"  Match attendu  : {total_decompte == sum(votes)}")
 
-    # Test : un seul bulletin chiffre ne revele pas le vote.
     print("\n  Verification anonymat :")
     v0 = chiffrer_vote(p, g, y, 0)
     v1 = chiffrer_vote(p, g, y, 1)

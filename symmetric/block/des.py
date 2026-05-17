@@ -25,7 +25,6 @@ def dechiffrer_3des_cbc(chiffre: bytes, cle: bytes, iv: bytes) -> bytes:
     return unpad(DES3.new(cle, DES3.MODE_CBC, iv=iv).decrypt(chiffre), 8)
 
 
-# Compat anciens noms.
 chiffrer_des_cbc = chiffrer_cbc
 dechiffrer_des_cbc = dechiffrer_cbc
 

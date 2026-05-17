@@ -81,7 +81,6 @@ class Serpent:
         return _serpent.encrypt_block(bloc, self._K)
 
 
-# Vecteurs de test officiels Serpent (soumission AES-original).
 _SERPENT_TESTS = [
     (
         "Serpent-128 Set 1 #0",
@@ -110,7 +109,6 @@ _SERPENT_TESTS = [
 ]
 
 
-# Vecteurs RC6 officiels (Annexe 4 de la specification RC6).
 _RC6_TESTS = [
     (
         bytes.fromhex("00000000000000000000000000000000"),

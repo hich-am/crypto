@@ -32,7 +32,6 @@ def crib_drag(xor_data: bytes, crib: bytes):
     return resultats
 
 
-# Compat anciens noms.
 chiffrer_otp = chiffrer
 dechiffrer_otp = dechiffrer
 

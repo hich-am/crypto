@@ -26,9 +26,6 @@ from PySide6.QtWidgets import (
 )
 
 
-# Stylesheet applied directly to each QComboBox popup view. The global QSS
-# (QComboBox QAbstractItemView) does not always reach the popup on macOS with
-# Fusion style, which caused the popup to render as a tall French Blue strip.
 _COMBO_POPUP_STYLE = (
     "QListView {"
     "  background-color: #ffffff;"
@@ -56,7 +53,6 @@ _COMBO_POPUP_STYLE = (
 )
 
 
-# Pill-style toggle: each option is a small checkable button.
 PRIMARY_BUTTON_STYLE = (
     "QPushButton {"
     "  background-color: #22c55e;"
@@ -153,14 +149,12 @@ class PillToggle(QWidget):
 
     def set_options(self, options: list[str], keep: bool = True):
         current = self.value() if keep else None
-        # Remove existing
         for btn in list(self._buttons.values()):
             self._group.removeButton(btn)
             btn.setParent(None)
             btn.deleteLater()
         self._buttons.clear()
         layout = self.layout()
-        # Recreate
         for opt in options:
             btn = QPushButton(opt)
             btn.setCheckable(True)
@@ -269,14 +263,12 @@ class FormatField(QWidget):
         self.set_bytes(raw)
 
     def _on_format_changed(self, new_fmt: str):
-        # Convert current display from old format to new format
         current_text = self.text()
         try:
             data = encode_to_bytes(current_text, self._format)
             new_text = decode_from_bytes(data, new_fmt)
             self.set_text(new_text)
         except Exception:
-            # Invalid input under old format : just update format selector
             pass
         self._format = new_fmt
 
@@ -317,9 +309,6 @@ class LabeledDropdown(QWidget):
         if default is not None and default in options:
             self._combo.setCurrentText(default)
         self._combo.currentTextChanged.connect(self.changed.emit)
-        # Force a QListView popup and style it directly so the dropdown
-        # renders as a clean white card on macOS / Fusion, instead of a
-        # tall blue strip painted with the selection color.
         self._combo.setView(QListView())
         self._combo.view().setStyleSheet(_COMBO_POPUP_STYLE)
         self._combo.setMaxVisibleItems(8)

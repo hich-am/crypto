@@ -68,7 +68,7 @@ def chiffrer(texte: str, cle, n: int) -> str:
         raise ValueError("Matrice cle non inversible mod 26")
     nums = _txt2num(texte)
     while len(nums) % n:
-        nums.append(23)  # padding 'X'
+        nums.append(23)
     out = []
     for i in range(0, len(nums), n):
         out.extend(_mult_mv(cle, nums[i:i + n], n))
@@ -94,7 +94,6 @@ def attaque_clair_connu(clair: str, chiffre: str, n: int):
     return _mult_mm(C, inverse_mat_mod(P, n), n)
 
 
-# Compat anciens noms.
 chiffrer_hill = chiffrer
 dechiffrer_hill = dechiffrer
 verifier_mat = matrice_valide

@@ -10,13 +10,12 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass, field as _field
 from typing import Any, Callable
 
-# Field types used in Champ.type
-TEXT = "text"           # str (single line)
-MULTILINE = "multiline" # str (multi-line)
-INT = "int"             # int
-BYTES_UTF8 = "bytes_utf8"  # str -> bytes via utf-8
-BYTES_HEX = "bytes_hex"    # hex str -> bytes
-CHOICE = "choice"          # str (one of options)
+TEXT = "text"
+MULTILINE = "multiline"
+INT = "int"
+BYTES_UTF8 = "bytes_utf8"
+BYTES_HEX = "bytes_hex"
+CHOICE = "choice"
 
 
 @dataclass
@@ -37,7 +36,6 @@ class Spec:
     runner: Callable[[dict], str]
 
 
-# -- Runners --------------------------------------------------------------
 
 def _run_caesar(v):
     from classical import caesar
@@ -410,7 +408,6 @@ def _run_elgamal_sig(v):
     )
 
 
-# -- Specs ----------------------------------------------------------------
 
 SPECS = {
     "classical.caesar": Spec(

@@ -25,8 +25,7 @@ from asymmetric.rsa import generer_cles as rsa_cles
 
 class TestDiffieHellman:
     def test_echange_partage_le_meme_secret(self):
-        # Petit (p, g) deterministe pour test rapide
-        p, g = 2147483647, 7  # 2^31 - 1, premier de Mersenne, g=7 generateur
+        p, g = 2147483647, 7
         _, _, _, _, Ka, Kb = echange(p, g)
         assert Ka == Kb
 
@@ -77,8 +76,6 @@ class TestRSA:
 class TestElGamal:
     @pytest.fixture(scope="class")
     def cles(self):
-        # Mersenne 2^31-1 (premier), generateur 7. Evite la primitive_root
-        # de sympy qui est lente sur 512+ bits.
         import secrets
         p, g = 2147483647, 7
         x = secrets.randbelow(p - 3) + 2
@@ -120,10 +117,9 @@ class TestElGamal:
 class TestECC:
     @pytest.fixture
     def courbe(self):
-        return Courbe(0, 7, 97)  # y^2 = x^3 + 7 mod 97
+        return Courbe(0, 7, 97)
 
     def test_courbe_singuliere_rejetee(self):
-        # 4*0 + 27*0 = 0 mod p -> singuliere
         with pytest.raises(ValueError):
             Courbe(0, 0, 97)
 
@@ -155,7 +151,6 @@ class TestECC:
     def test_multiplication_scalaire_associativite(self, courbe):
         pts = courbe.points()
         P = pts[1]
-        # (2+3)P == 2P + 3P
         gauche = courbe.mul(5, P)
         droite = courbe.add(courbe.mul(2, P), courbe.mul(3, P))
         assert gauche == droite

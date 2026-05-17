@@ -60,7 +60,6 @@ def demo():
     print("\n" + "=" * 50)
     print("  ElGamal")
     print("=" * 50)
-    # Petit (p, g) pour la demo (la generation 512+ bits via sympy est lente).
     p, g = 2147483647, 7
     x = secrets.randbelow(p - 3) + 2
     y = pow(g, x, p)

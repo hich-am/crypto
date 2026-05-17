@@ -28,7 +28,6 @@ def run_async(parent: QWidget, fn, on_done, on_failed=None):
     """Run fn() on a Python daemon thread. on_done/on_failed are invoked
     on the UI thread via queued Qt signals."""
     bridge = _AsyncBridge()
-    # Cross-thread signal/slot : Qt auto-detects and uses QueuedConnection.
     bridge.done.connect(on_done)
     if on_failed is not None:
         bridge.failed.connect(on_failed)
@@ -44,11 +43,9 @@ def run_async(parent: QWidget, fn, on_done, on_failed=None):
 
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
-    # Keep the bridge alive by anchoring it on the parent (otherwise GC kills
-    # the QObject before the signal is delivered).
     if not hasattr(parent, "_async_bridges"):
-        parent._async_bridges = []  # type: ignore[attr-defined]
-    parent._async_bridges.append(bridge)  # type: ignore[attr-defined]
+        parent._async_bridges = []
+    parent._async_bridges.append(bridge)
     return t
 
 from gui_widgets import (
@@ -61,13 +58,12 @@ from gui_widgets import (
 )
 
 
-# Per-mode parameters for AES.
 _AES_MODES: dict[str, dict] = {
     "ECB": {"iv": 0, "padding": True},
     "CBC": {"iv": 16, "padding": True},
     "CFB": {"iv": 16, "padding": False},
     "OFB": {"iv": 16, "padding": False},
-    "CTR": {"iv": 8, "padding": False},   # pycryptodome default counter size
+    "CTR": {"iv": 8, "padding": False},
     "GCM": {"iv": 12, "padding": False, "authenticated": True},
 }
 
@@ -102,7 +98,7 @@ def _aes_decrypt(mode: str, blob: bytes, cle: bytes, iv: bytes, padding: str) ->
     if mode == "CTR":
         return aes.dechiffrer_ctr(blob, cle, iv)
     if mode == "GCM":
-        return aes.dechiffrer_gcm(blob, cle)  # nonce embedded
+        return aes.dechiffrer_gcm(blob, cle)
     raise ValueError(f"Mode AES inconnu : {mode}")
 
 
@@ -125,12 +121,11 @@ def _rc4_encrypt(mode: str, msg: bytes, cle: bytes, iv: bytes, padding: str) -> 
     return rc4.chiffrer(cle, msg)
 
 
-# Static config: which modes / key sizes / IV per algo.
 _SYM_CONFIGS = {
     "AES": {
         "modes": list(_AES_MODES.keys()),
         "default_mode": "CBC",
-        "key_sizes": [16, 24, 32],  # 128, 192, 256 bits
+        "key_sizes": [16, 24, 32],
         "default_key_size": 16,
         "iv_size_fn": lambda mode: _AES_MODES[mode]["iv"],
         "padding_fn": lambda mode: _AES_MODES[mode]["padding"],
@@ -165,7 +160,7 @@ _SYM_CONFIGS = {
         "iv_size_fn": lambda mode: 0,
         "padding_fn": lambda mode: False,
         "encrypt": _rc4_encrypt,
-        "decrypt": _rc4_encrypt,  # stream cipher : encrypt == decrypt
+        "decrypt": _rc4_encrypt,
     },
 }
 
@@ -182,7 +177,6 @@ class SymmetricCipherPanel(QWidget):
         self._build()
         self._on_mode_changed(self.cfg["default_mode"])
 
-    # ----- UI construction -----
     def _build(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
@@ -198,7 +192,6 @@ class SymmetricCipherPanel(QWidget):
         splitter.setSizes([1, 1])
         root.addWidget(splitter, stretch=1)
 
-        # Shared bottom row : algo settings
         bottom = QHBoxLayout()
         bottom.setSpacing(12)
 
@@ -235,7 +228,6 @@ class SymmetricCipherPanel(QWidget):
             "Cle secrete", default_text="", default_format="Hex",
             generate_size=self.cfg["default_key_size"],
         )
-        # Pre-populate with a fresh key
         self.key_in.set_bytes(secrets.token_bytes(self.cfg["default_key_size"]))
         side.body.addWidget(self.key_in)
 
@@ -291,16 +283,13 @@ class SymmetricCipherPanel(QWidget):
         side.body.addStretch(1)
         return side
 
-    # ----- Reactions -----
     def _on_mode_changed(self, mode: str):
         iv_size = self.cfg["iv_size_fn"](mode)
         has_padding = self.cfg["padding_fn"](mode)
-        # Toggle visibility / generate target size
         self.iv_in.setVisible(iv_size > 0)
         self.iv_dec.setVisible(iv_size > 0)
         if iv_size > 0:
-            self.iv_in._gen_size = iv_size  # pylint: disable=protected-access
-            # If current IV is wrong size, regenerate
+            self.iv_in._gen_size = iv_size
             try:
                 if len(self.iv_in.to_bytes()) != iv_size:
                     self.iv_in.set_bytes(secrets.token_bytes(iv_size))
@@ -310,8 +299,7 @@ class SymmetricCipherPanel(QWidget):
 
     def _on_key_size_changed(self, size_str: str):
         size = int(size_str)
-        self.key_in._gen_size = size  # pylint: disable=protected-access
-        # If key is wrong size, regenerate
+        self.key_in._gen_size = size
         try:
             if len(self.key_in.to_bytes()) != size:
                 self.key_in.set_bytes(secrets.token_bytes(size))
@@ -368,9 +356,6 @@ class SymmetricCipherPanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  ClassicalPanel : Caesar / Vigenere / OTP / Hill
-# ============================================================================
 
 class ClassicalPanel(QWidget):
     """Side-by-side encrypt/decrypt for classical ciphers."""
@@ -390,7 +375,6 @@ class ClassicalPanel(QWidget):
         title.setStyleSheet("font-size: 18px; font-weight: 700; color: #22c55e;")
         root.addWidget(title)
 
-        # Key controls (algo-specific)
         key_section = SectionFrame("Cle")
         if self.algo == "Caesar":
             from PySide6.QtWidgets import QSpinBox
@@ -417,7 +401,7 @@ class ClassicalPanel(QWidget):
             import secrets
             self.otp_key.set_bytes(secrets.token_bytes(16))
             key_section.body.addWidget(self.otp_key)
-        else:  # Hill
+        else:
             from PySide6.QtWidgets import QSpinBox, QLineEdit
             row1 = QHBoxLayout()
             row1.addWidget(QLabel("Taille de la matrice (n x n) :"))
@@ -584,9 +568,6 @@ class ClassicalPanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  HashPanel : MD5 / SHA-256 / SHA-512
-# ============================================================================
 
 class HashPanel(QWidget):
     """Hash a message with selectable algorithm."""
@@ -667,9 +648,6 @@ class HashPanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  HMACPanel : keyed-hash message authentication code
-# ============================================================================
 
 class HMACPanel(QWidget):
     """Compute HMAC of a message with a key."""
@@ -743,9 +721,6 @@ class HMACPanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  KeyExchangePanel : Diffie-Hellman (and ECDH)
-# ============================================================================
 
 class KeyExchangePanel(QWidget):
     """Simulates Alice and Bob agreeing on a shared secret without ever
@@ -773,7 +748,6 @@ class KeyExchangePanel(QWidget):
         info.setWordWrap(True)
         root.addWidget(info)
 
-        # Settings
         ctrls = QHBoxLayout()
         if self.algo == "DH":
             self.bits_dd = LabeledDropdown(
@@ -800,7 +774,6 @@ class KeyExchangePanel(QWidget):
         splitter.setSizes([1, 1])
         root.addWidget(splitter, stretch=1)
 
-        # Bottom : match indicator
         self.match_label = QLabel("Secret partage : ---")
         self.match_label.setStyleSheet(
             "font-size: 14px; font-weight: 600; padding: 8px;"
@@ -898,22 +871,16 @@ class KeyExchangePanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  SignaturePanel : RSA / DSA / ECDSA / ElGamal signatures
-# ============================================================================
 
 class SignaturePanel(QWidget):
     """Side-by-side sign / verify panel for signature schemes."""
 
     def __init__(self, algo: str, parent=None):
         super().__init__(parent)
-        # algo : 'RSA-PKCS1v15' | 'RSA-PSS' | 'DSA' | 'ECDSA-P256'
-        #      | 'ECDSA-P384' | 'ECDSA-P521' | 'ElGamal'
         self.algo = algo
         self._priv = None
         self._pub = None
         self._build()
-        # Lazy : keys generated on first click (ElGamal-sig is slow via sympy).
         self.keys_display.setPlainText(
             "Aucune cle generee. Cliquer 'Generer une nouvelle paire de cles'"
             " pour commencer."
@@ -928,7 +895,6 @@ class SignaturePanel(QWidget):
         title.setStyleSheet("font-size: 18px; font-weight: 700; color: #22c55e;")
         root.addWidget(title)
 
-        # Top : key generation
         top = SectionFrame("Cles de signature")
         btn = QPushButton("Generer une nouvelle paire de cles")
         btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
@@ -1023,7 +989,7 @@ class SignaturePanel(QWidget):
                           "ECDSA-P521": ec.SECP521R1()}
                 priv = ec.generate_private_key(curves[algo])
                 return ("ECDSA", priv, priv.public_key())
-            else:  # ElGamal
+            else:
                 from signatures import elgamal_sig
                 p, g, x, y = elgamal_sig.gen_cles(512)
                 return ("ElGamal", (p, g, x), (p, g, y))
@@ -1070,7 +1036,7 @@ class SignaturePanel(QWidget):
                     f"\n=== Cle privee (scalaire d) ===\n"
                     f"d : {short(priv_nums.private_value)}"
                 )
-            else:  # ElGamal
+            else:
                 p, g, x = priv
                 _, _, y = pub
                 self.keys_display.setPlainText(
@@ -1180,9 +1146,6 @@ class SignaturePanel(QWidget):
         box.exec()
 
 
-# ============================================================================
-#  AsymmetricEncryptPanel : RSA / ElGamal
-# ============================================================================
 
 class AsymmetricEncryptPanel(QWidget):
     """Side-by-side encrypt/decrypt for asymmetric algos (RSA, ElGamal).
@@ -1198,8 +1161,6 @@ class AsymmetricEncryptPanel(QWidget):
         self._priv = None
         self._pub = None
         self._build()
-        # Lazy : keys are generated on first click, not at init (ElGamal/sympy
-        # is too slow to block the GUI startup).
         self.keys_display.setPlainText(
             "Aucune cle generee. Cliquer 'Generer une nouvelle paire de cles'"
             " pour commencer."
@@ -1214,7 +1175,6 @@ class AsymmetricEncryptPanel(QWidget):
         title.setStyleSheet("font-size: 18px; font-weight: 700; color: #22c55e;")
         root.addWidget(title)
 
-        # Top : key generation
         top = SectionFrame("Cles (generer ou editer manuellement)")
         ctrls = QHBoxLayout()
         sizes = ["1024", "2048", "3072", "4096"] if self.algo == "RSA" else ["512", "1024", "2048"]
@@ -1267,7 +1227,6 @@ class AsymmetricEncryptPanel(QWidget):
         self.keys_display.setReadOnly(not checked)
         self.apply_btn.setVisible(checked)
         if checked and (self._pub is None or "Aucune cle" in self.keys_display.toPlainText()):
-            # Pre-fill with a template
             if self.algo == "RSA":
                 self.keys_display.setPlainText(
                     "n = 0x...\n"
@@ -1313,16 +1272,12 @@ class AsymmetricEncryptPanel(QWidget):
                 p = kv.get("p")
                 q = kv.get("q")
                 if p is None or q is None:
-                    # Without p, q we can't build a private key via the standard
-                    # API. Use a minimal stand-in : derive p, q via factorisation
-                    # is too slow, so instead require them.
                     raise ValueError(
                         "RSA : p et q sont aussi requis pour reconstruire la cle privee"
                         " (la lib cryptography ne permet pas d'importer juste (n,e,d))."
                         " Tu peux les obtenir en generant une cle avec 'Generer' puis"
                         " en copiant les valeurs affichees."
                     )
-                # Derive remaining CRT values
                 dmp1 = d % (p - 1)
                 dmq1 = d % (q - 1)
                 iqmp = pow(q, -1, p)
@@ -1333,7 +1288,7 @@ class AsymmetricEncryptPanel(QWidget):
                 )
                 self._priv = priv_nums.private_key()
                 self._pub = pub_nums.public_key()
-            else:  # ElGamal
+            else:
                 if "p" not in kv or "g" not in kv:
                     raise ValueError("ElGamal : p et g sont obligatoires")
                 p, g = kv["p"], kv["g"]
@@ -1397,7 +1352,6 @@ class AsymmetricEncryptPanel(QWidget):
         side.body.addStretch(1)
         return side
 
-    # ----- Crypto -----
     def _regen_keys(self):
         bits = int(self.bits_dd.value())
         algo = self.algo

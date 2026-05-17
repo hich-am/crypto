@@ -59,7 +59,6 @@ def demo():
     print("\n" + "=" * 50)
     print("  ElGamal signature")
     print("=" * 50)
-    # Petit p pour la demo (sympy.primitive_root est lent au-dela de 64 bits).
     p, g = 2147483647, 7
     x = secrets.randbelow(p - 3) + 2
     y = pow(g, x, p)
